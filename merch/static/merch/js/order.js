@@ -173,8 +173,16 @@ async function handleFormSubmit(e) {
  * Validate order data before submission
  */
 function validateOrderData(data) {
-    // Check required fields
-    const requiredFields = ['full_name', 'gamer_tag', 'preferred_number', 'size', 'color'];
+    // Check if name/tag fields exist (they may be hidden for authenticated users)
+    const nameField = document.getElementById('fullName');
+    const tagField = document.getElementById('gamerTag');
+    const isAuthenticated = nameField && nameField.type === 'hidden';
+    
+    // Define required fields based on authentication status
+    let requiredFields = ['preferred_number', 'size', 'color'];
+    if (!isAuthenticated) {
+        requiredFields.push('full_name', 'gamer_tag');
+    }
     
     for (const field of requiredFields) {
         if (!data[field] || data[field].trim() === '') {

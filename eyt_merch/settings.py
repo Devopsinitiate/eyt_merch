@@ -11,21 +11,26 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h+1!i=1p&jb9#c$72&h1@+j%2!te_nfx*rz#q7d=60bfyjs%ag'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-development')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -118,6 +123,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Directory where collectstatic will gather all static files
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # Additional locations of static files
 STATICFILES_DIRS = [
     # Add project-level static directory if needed
@@ -125,3 +133,12 @@ STATICFILES_DIRS = [
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom User Model
+AUTH_USER_MODEL = 'merch.CustomUser'
+
+# Authentication URLs
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+

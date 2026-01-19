@@ -1,12 +1,85 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 import json
-from .models import Size, Order
+from .models import Size, Order, CustomUser
+from .forms import UserSignupForm, UserLoginForm, UserProfileForm
+
+
+def signup_view(request):
+    """User registration view"""
+    if request.user.is_authenticated:
+        return redirect('merch:index')
+    
+    if request.method == 'POST':
+        form = UserSignupForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f'Welcome to the EYT Gamer Army, {user.gamer_tag}!')
+            return redirect('merch:index')
+    else:
+        form = UserSignupForm()
+    
+    return render(request, 'merch/signup.html', {'form': form})
+
+
+def login_view(request):
+    """User login view"""
+    if request.user.is_authenticated:
+        return redirect('merch:index')
+    
+    if request.method == 'POST':
+        form = UserLoginForm(request, data=request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=email, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'Welcome back, {user.gamer_tag}!')
+                return redirect('merch:index')
+    else:
+        form = UserLoginForm()
+    
+    return render(request, 'merch/login.html', {'form': form})
+
+
+def logout_view(request):
+    """User logout view"""
+    logout(request)
+    messages.info(request, 'You have been logged out.')
+    return redirect('merch:index')
+
+
+@login_required
+def profile_view(request):
+    """User profile view"""
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('merch:profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+    
+    # Get user's orders
+    orders = request.user.orders.all()
+    
+    return render(request, 'merch/profile.html', {
+        'form': form,
+        'orders': orders
+    })
+
 
 def index(request):
     """Main product page"""
     return render(request, 'merch/index.html')
+
 
 @require_http_methods(["GET"])
 def get_available_sizes(request):
@@ -15,13 +88,14 @@ def get_available_sizes(request):
     return JsonResponse(list(sizes), safe=False)
 
 @require_http_methods(["POST"])
+@login_required
 def create_order(request):
-    """API endpoint to create new order"""
+    """API endpoint to create new order (requires authentication)"""
     try:
         data = json.loads(request.body)
         
         # Validate required fields
-        required_fields = ['full_name', 'gamer_tag', 'preferred_number', 'size', 'color']
+        required_fields = ['preferred_number', 'size', 'color']
         for field in required_fields:
             if not data.get(field):
                 return JsonResponse({'error': f'{field} is required'}, status=400)
@@ -34,15 +108,16 @@ def create_order(request):
         except Size.DoesNotExist:
             return JsonResponse({'error': 'Invalid size selected'}, status=400)
         
-        # Create order
+        # Create order linked to user
         order = Order.objects.create(
-            full_name=data['full_name'],
-            gamer_tag=data['gamer_tag'],
+            user=request.user,
+            full_name=request.user.full_name,
+            gamer_tag=request.user.gamer_tag,
             preferred_number=data['preferred_number'],
             size=data['size'],
             color=data['color'],
-            phone=data.get('phone', ''),
-            email=data.get('email', '')
+            phone=request.user.phone,
+            email=request.user.email
         )
         
         # Decrease size availability

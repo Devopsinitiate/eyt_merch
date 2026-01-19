@@ -1,0 +1,191 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>My Profile | EYT Gamer Army</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#DC2626",
+                        "background-dark": "#0a0a0a",
+                        secondary: { dark: "#171717", light: "#f3f4f6" }
+                    },
+                    fontFamily: {
+                        display: ["Oswald", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        input:focus {
+            outline: none !important;
+            border-color: #DC2626 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark text-slate-100 font-sans min-h-screen p-6">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <img alt="EYTGaming Logo" class="h-16" src="{% static 'merch/images/EYTLOGO.jpeg' %}" />
+                <div>
+                    <h1 class="font-display text-3xl font-bold uppercase">
+                        <span class="text-primary">#{{ user.gamer_tag }}</span>
+                    </h1>
+                    <p class="text-slate-400 text-sm">{{ user.email }}</p>
+                </div>
+            </div>
+            <a href="{% url 'merch:index' %}" class="flex items-center gap-2 text-slate-400 hover:text-primary text-sm">
+                <span class="material-icons-outlined">arrow_back</span>
+                Back to Shop
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Profile Edit -->
+            <div class="lg:col-span-2">
+                <div class="bg-secondary-dark p-6 rounded-lg shadow-xl border border-white/5">
+                    <h2 class="font-display text-2xl uppercase mb-6 pb-4 border-b border-white/10">Profile Information
+                    </h2>
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-lg text-sm font-medium
+                                {% if message.tags == 'error' %}bg-red-500/10 text-red-400 border border-red-500/20
+                                {% elif message.tags == 'success' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+                                {% else %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" class="space-y-5">
+                        {% csrf_token %}
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">Full
+                                    Name</label>
+                                {{ form.full_name }}
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">Gamer
+                                    Tag</label>
+                                {{ form.gamer_tag }}
+                                <p class="text-xs text-slate-500">Gamer tag cannot be changed</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label
+                                    class="block text-xs font-bold uppercase tracking-widest text-slate-400">Email</label>
+                                {{ form.email }}
+                            </div>
+                            <div class="space-y-2">
+                                <label
+                                    class="block text-xs font-bold uppercase tracking-widest text-slate-400">Phone</label>
+                                {{ form.phone }}
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                            class="bg-primary hover:bg-red-700 text-white font-display text-lg uppercase tracking-widest px-6 py-3 rounded shadow-lg transition">
+                            Update Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Actions Sidebar -->
+            <div class="space-y-6">
+                <!-- Quick Stats -->
+                <div class="bg-secondary-dark p-6 rounded-lg shadow-xl border border-white/5">
+                    <h3 class="font-display text-xl uppercase mb-4">Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400 text-sm">Total Orders</span>
+                            <span class="font-bold text-2xl text-primary">{{ orders.count }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="bg-secondary-dark p-6 rounded-lg shadow-xl border border-white/5">
+                    <h3 class="font-display text-xl uppercase mb-4">Actions</h3>
+                    <div class="space-y-3">
+                        <a href="{% url 'merch:logout' %}"
+                            class="flex items-center gap-2 text-slate-400 hover:text-red-400 text-sm transition">
+                            <span class="material-icons-outlined text-lg">logout</span>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order History -->
+        <div class="mt-6 bg-secondary-dark p-6 rounded-lg shadow-xl border border-white/5">
+            <h2 class="font-display text-2xl uppercase mb-6">Order History</h2>
+
+            {% if orders %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-white/10">
+                        <tr class="text-left">
+                            <th class="pb-3 font-bold uppercase tracking-wider text-xs text-slate-400">Order ID</th>
+                            <th class="pb-3 font-bold uppercase tracking-wider text-xs text-slate-400">Number</th>
+                            <th class="pb-3 font-bold uppercase tracking-wider text-xs text-slate-400">Size</th>
+                            <th class="pb-3 font-bold uppercase tracking-wider text-xs text-slate-400">Color</th>
+                            <th class="pb-3 font-bold uppercase tracking-wider text-xs text-slate-400">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr class="border-b border-white/5 hover:bg-white/5">
+                            <td class="py-4 font-mono text-primary">#EYT-{{ order.id }}</td>
+                            <td class="py-4 font-bold">{{ order.preferred_number }}</td>
+                            <td class="py-4">{{ order.size }}</td>
+                            <td class="py-4">{{ order.get_color_display }}</td>
+                            <td class="py-4 text-slate-400">{{ order.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <span class="material-icons-outlined text-6xl text-slate-700 mb-4">shopping_bag</span>
+                <p class="text-slate-400">No orders yet. <a href="{% url 'merch:index' %}"
+                        class="text-primary hover:text-red-500">Start shopping</a></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+
+</html>

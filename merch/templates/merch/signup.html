@@ -1,0 +1,169 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Join the EYT Gamer Army | Signup</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Oswald:wght@500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#DC2626",
+                        "background-dark": "#0a0a0a",
+                        secondary: { dark: "#171717" }
+                    },
+                    fontFamily: {
+                        display: ["Oswald", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    }
+                }
+            }
+        };
+    </script>
+    
+    <style>
+        input:focus, select:focus {
+            outline: none !important;
+            border-color: #DC2626 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark text-slate-100 font-sans min-h-screen flex items-center justify-center p-6">
+    
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <img alt="EYTGaming Logo" 
+                 class="h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]" 
+                 src="{% static 'merch/images/EYTLOGO.jpeg' %}"/>
+            
+            <h1 class="font-display text-4xl font-bold tracking-tighter uppercase mb-2">
+                Join the <span class="text-primary">Gamer Army</span>
+            </h1>
+            <p class="text-slate-400 text-sm">Create your EYT account to order exclusive merch</p>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="bg-secondary-dark p-8 rounded-lg shadow-2xl border border-white/5">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-lg text-sm font-medium
+                        {% if message.tags == 'error' %}bg-red-500/10 text-red-400 border border-red-500/20
+                        {% elif message.tags == 'success' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+                        {% else %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+                
+                <!-- Full Name -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Full Name
+                    </label>
+                    {{ form.full_name }}
+                    {% if form.full_name.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ form.full_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Gamer Tag -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Gamer Tag
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">#</span>
+                        {{ form.gamer_tag }}
+                    </div>
+                    {% if form.gamer_tag.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ form.gamer_tag.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Email Address
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Phone -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Phone Number
+                    </label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ form.phone.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Password -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Password
+                    </label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ form.password1.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Confirm Password
+                    </label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ form.password2.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" 
+                        class="w-full bg-primary hover:bg-red-700 text-white font-display text-xl uppercase tracking-widest py-4 rounded shadow-xl shadow-primary/20 transition transform active:scale-[0.98] flex items-center justify-center gap-3">
+                    <span class="material-icons-outlined">person_add</span>
+                    <span>Create Account</span>
+                </button>
+
+                <!-- Login Link -->
+                <p class="text-center text-sm text-slate-400 mt-4">
+                    Already have an account? 
+                    <a href="{% url 'merch:login' %}" class="text-primary hover:text-red-500 font-bold">Login</a>
+                </p>
+            </form>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="text-center mt-6">
+            <a href="{% url 'merch:index' %}" class="text-slate-400 hover:text-primary text-sm flex items-center justify-center gap-2">
+                <span class="material-icons-outlined text-sm">arrow_back</span>
+                Back to Shop
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
