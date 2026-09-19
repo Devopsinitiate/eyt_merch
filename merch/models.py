@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 
 class CustomUser(AbstractUser):
@@ -81,3 +82,100 @@ class Order(models.Model):
     
     def __str__(self):
         return f"{self.gamer_tag} - {self.size} - {self.color}"
+
+
+class TournamentConfig(models.Model):
+    """Single tournament configuration (fee, payment details, capacity)"""
+    tournament_name = models.CharField(max_length=200, default='EYT GAMER ARMY TOURNAMENT')
+    fee_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=10, default='NGN')
+    account_name = models.CharField(max_length=200, blank=True)
+    account_number = models.CharField(max_length=50, blank=True)
+    bank_name = models.CharField(max_length=200, blank=True)
+    max_participants = models.PositiveIntegerField(
+        default=0,
+        help_text='Maximum number of participants. 0 means unlimited.'
+    )
+    is_registration_open = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Tournament Configuration'
+        verbose_name_plural = 'Tournament Configuration'
+
+    def __str__(self):
+        return self.tournament_name
+
+    @classmethod
+    def get_config(cls):
+        """Return the single config instance (creating it with defaults if missing)"""
+        config, _ = cls.objects.get_or_create(pk=1)
+        return config
+
+    @property
+    def registered_count(self):
+        return TournamentRegistration.objects.count()
+
+    @property
+    def spots_remaining(self):
+        if not self.max_participants:
+            return None
+        return max(self.max_participants - self.registered_count, 0)
+
+    @property
+    def is_full(self):
+        if not self.max_participants:
+            return False
+        return self.registered_count >= self.max_participants
+
+
+class TournamentRegistration(models.Model):
+    """External tournament registrations collected via QR code"""
+    GENDER_CHOICES = [
+        ('MALE', 'Male'),
+        ('FEMALE', 'Female'),
+        ('OTHER', 'Other'),
+        ('NOT_SAY', 'Prefer not to say'),
+    ]
+
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),
+    ]
+
+    full_name = models.CharField(max_length=200)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
+    gamer_tag = models.CharField(max_length=100, unique=True)
+    email = models.EmailField(unique=True)
+    payment_reference = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Bank transfer reference / receipt number (optional)'
+    )
+    payment_status = models.CharField(
+        max_length=10,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='PENDING'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.gamer_tag} ({self.full_name})"
+
+    def clean(self):
+        """Validate tournament capacity & registration state"""
+        if self.pk is None:
+            config = TournamentConfig.get_config()
+            if config and not config.is_registration_open:
+                raise ValidationError('Tournament registration is currently closed.')
+            if config and config.is_full:
+                raise ValidationError(
+                    'Tournament registration is full. No more spots available.'
+                )
+
+    def save(self, *args, **kwargs):
+        self.gamer_tag = self.gamer_tag.upper().strip()
+        self.clean()
+        super().save(*args, **kwargs)

@@ -11,4 +11,6 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('api/sizes/', views.get_available_sizes, name='available_sizes'),
     path('api/order/', views.create_order, name='create_order'),
+    path('tournament/', views.tournament_view, name='tournament'),
+    path('tournament/register/', views.tournament_register, name='tournament_register'),
 ]

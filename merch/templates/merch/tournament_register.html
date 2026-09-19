@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Tournament Registration | EYT Gaming</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#DC2626",
+                        "background-dark": "#0a0a0a",
+                        secondary: { dark: "#171717" }
+                    },
+                    fontFamily: {
+                        display: ["Oswald", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        input:focus,
+        select:focus {
+            outline: none !important;
+            border-color: #DC2626 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark text-slate-100 font-sans min-h-screen flex items-center justify-center p-6">
+
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <img alt="EYTGaming Logo" class="h-20 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                src="{% static 'merch/images/EYTLOGO.jpeg' %}" />
+
+            <h1 class="font-display text-3xl font-bold tracking-tighter uppercase mb-2">
+                {{ config.tournament_name|default:"EYT Tournament" }}
+            </h1>
+            <p class="text-slate-400 text-sm">Lock in your spot in the arena</p>
+        </div>
+
+        <!-- Spots Bar -->
+        {% if config.spots_remaining is not None %}
+        <div class="mb-6">
+            <div class="flex justify-between text-xs uppercase tracking-widest text-slate-400 mb-2">
+                <span>Spots Remaining</span>
+                <span class="font-bold {% if config.spots_remaining <= 5 %}text-primary{% endif %}">
+                    {{ config.spots_remaining }}/{{ config.max_participants }}
+                </span>
+            </div>
+            <div class="w-full bg-white/5 rounded h-2 overflow-hidden">
+                <div class="h-full bg-primary rounded"
+                    style="width: {{ config.registered_count|floatformat:0 }}%"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if closed %}
+        <!-- Closed State -->
+        <div class="bg-secondary-dark p-8 rounded-lg shadow-2xl border border-white/5 text-center">
+            <span class="material-icons-outlined text-6xl text-slate-700 mb-4">event_busy</span>
+            <h2 class="font-display text-2xl uppercase mb-2">Registration Closed</h2>
+            <p class="text-slate-400 text-sm">Tournament registration is currently closed. Check back soon.</p>
+        </div>
+
+        {% elif full %}
+        <!-- Full State -->
+        <div class="bg-secondary-dark p-8 rounded-lg shadow-2xl border border-white/5 text-center">
+            <span class="material-icons-outlined text-6xl text-slate-700 mb-4">how_to_reg</span>
+            <h2 class="font-display text-2xl uppercase mb-2">Tournament Full</h2>
+            <p class="text-slate-400 text-sm">All spots have been filled. Thanks for supporting EYT Gaming!</p>
+        </div>
+
+        {% else %}
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 p-4 rounded-lg text-sm font-medium
+            {% if message.tags == 'error' %}bg-red-500/10 text-red-400 border border-red-500/20
+            {% elif message.tags == 'success' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+            {% else %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Payment Details Card -->
+        {% if config and config.account_number %}
+        <div class="mb-6 bg-primary/10 border border-primary/20 p-5 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-display text-lg uppercase flex items-center gap-2">
+                    <span class="material-icons-outlined text-primary">payments</span>
+                    Registration Fee
+                </h2>
+                <span class="font-display text-2xl text-primary font-bold">
+                    {{ config.currency }} {{ config.fee_amount }}
+                </span>
+            </div>
+
+            <div class="space-y-3 text-sm border-t border-primary/20 pt-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs uppercase tracking-widest text-slate-400">Account Name</span>
+                    <span class="font-bold">{{ config.account_name }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs uppercase tracking-widest text-slate-400">Bank</span>
+                    <span class="font-bold">{{ config.bank_name }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs uppercase tracking-widest text-slate-400">Account Number</span>
+                    <span class="font-bold font-mono text-primary text-base" id="accountNumber">{{ config.account_number }}</span>
+                </div>
+            </div>
+
+            <button type="button" onclick="copyAccountNumber()"
+                class="mt-4 w-full bg-primary hover:bg-red-700 text-white text-xs uppercase tracking-widest px-4 py-3 rounded transition">
+                Copy Account Number
+            </button>
+            <p class="text-[10px] uppercase tracking-tighter mt-3 opacity-50 text-center">
+                Transfer the fee above to secure your spot — payment is manual.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Registration Form -->
+        <div class="bg-secondary-dark p-8 rounded-lg shadow-2xl border border-white/5">
+            <h2 class="font-display text-2xl uppercase mb-6">Player Registration</h2>
+
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+
+                <!-- Full Name -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Full Name
+                    </label>
+                    {{ form.full_name }}
+                    {% if form.full_name.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.full_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Gender -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Gender
+                    </label>
+                    {{ form.gender }}
+                    {% if form.gender.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.gender.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Gamer Tag -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Gamer Tag
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">#</span>
+                        {{ form.gamer_tag }}
+                    </div>
+                    {% if form.gamer_tag.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.gamer_tag.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Email Address
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Payment Reference (Optional) -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Payment Reference <span class="opacity-50">(Optional)</span>
+                    </label>
+                    {{ form.payment_reference }}
+                    {% if form.payment_reference.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.payment_reference.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full bg-primary hover:bg-red-700 text-white font-display text-xl uppercase tracking-widest py-4 rounded shadow-xl shadow-primary/20 transition transform active:scale-[0.98] flex items-center justify-center gap-3">
+                    <span class="material-icons-outlined">sports_esports</span>
+                    <span>Register for Tournament</span>
+                </button>
+
+                <p class="text-[10px] uppercase tracking-tighter text-center opacity-40 mt-4">
+                    Scan the QR code to share this portal.
+                </p>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Back to Tournaments -->
+        <div class="text-center mt-6">
+            <a href="{% url 'merch:tournament' %}"
+                class="text-slate-400 hover:text-primary text-sm flex items-center justify-center gap-2">
+                <span class="material-icons-outlined text-sm">qr_code_2</span>
+                Tournament QR Code
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function copyAccountNumber() {
+            const number = document.getElementById('accountNumber');
+            navigator.clipboard.writeText(number.textContent).then(function () {
+                number.textContent = 'Copied!';
+                number.classList.add('text-emerald-400');
+                setTimeout(function () {
+                    number.textContent = '{{ config.account_number }}';
+                    number.classList.remove('text-emerald-400');
+                }, 1500);
+            });
+        }
+    </script>
+
+</body>
+
+</html>

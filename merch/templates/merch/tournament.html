@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>EYTGaming Tournament | Scan to Register</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#DC2626",
+                        "background-dark": "#0a0a0a",
+                        secondary: { dark: "#171717" }
+                    },
+                    fontFamily: {
+                        display: ["Oswald", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+
+<body class="bg-background-dark text-slate-100 font-sans min-h-screen">
+
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <img alt="EYTGaming Logo" class="h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                src="{% static 'merch/images/EYTLOGO.jpeg' %}" />
+            <h1 class="font-display text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-2">
+                {{ config.tournament_name }}
+            </h1>
+            <p class="text-slate-400 text-sm uppercase tracking-widest">Scan the code to enter the arena</p>
+        </div>
+
+        <!-- QR Card -->
+        <div class="bg-secondary-dark p-8 rounded-lg shadow-2xl border border-white/5 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="bg-white p-4 rounded shadow-xl shrink-0">
+                    {{ qr_svg }}
+                </div>
+                <div class="flex-1 space-y-4 text-center md:text-left">
+                    <h2 class="font-display text-2xl uppercase">Or open the portal</h2>
+                    <p class="text-slate-400 text-sm">
+                        Point your camera at the QR code and you'll be taken straight to the
+                        tournament registration form.
+                    </p>
+                    <a href="{{ register_url }}"
+                        class="inline-block bg-primary hover:bg-red-700 text-white font-display text-lg uppercase tracking-widest px-8 py-4 rounded shadow-xl shadow-primary/20 transition transform active:scale-[0.98]">
+                        Open Registration Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament Details -->
+        {% if config %}
+        <div class="bg-secondary-dark p-8 rounded-lg shadow-2xl border border-white/5">
+            <h2 class="font-display text-2xl uppercase mb-6 border-b border-white/10 pb-4">Tournament Details</h2>
+            <div class="space-y-4 text-sm">
+                <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span class="text-slate-400 uppercase tracking-widest text-xs">Registration Fee</span>
+                    <span class="font-display text-3xl text-primary font-bold">
+                        {{ config.currency }} {{ config.fee_amount }}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span class="text-slate-400 uppercase tracking-widest text-xs">Spots Filled</span>
+                    <span class="font-bold">
+                        {{ config.registered_count }} / {{ config.max_participants|default:"Unlimited" }}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span class="text-slate-400 uppercase tracking-widest text-xs">Bank Account</span>
+                    <span class="font-bold">{{ config.account_number|default:"—" }}</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span class="text-slate-400 uppercase tracking-widest text-xs">Account Name</span>
+                    <span class="font-bold">{{ config.account_name|default:"—" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 uppercase tracking-widest text-xs">Bank</span>
+                    <span class="font-bold">{{ config.bank_name|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Back to Home -->
+        <div class="text-center mt-8">
+            <a href="{% url 'merch:index' %}"
+                class="text-slate-400 hover:text-primary text-sm flex items-center justify-center gap-2">
+                <span class="material-icons-outlined text-sm">arrow_back</span>
+                Back to Home
+            </a>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,9 +1,65 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponse
+from django.contrib import messages
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
-from .models import Size, Order, CustomUser
+from .models import Size, Order, CustomUser, TournamentConfig, TournamentRegistration
+
+@admin.action(description='Confirm payment for selected registrations')
+def confirm_payment(modeladmin, request, queryset):
+    """Mark selected registrations as payment confirmed"""
+    updated = queryset.update(payment_status='CONFIRMED')
+    messages.success(request, f'{updated} registration(s) marked as payment confirmed.')
+
+
+@admin.action(description='Export selected registrations to Excel')
+def export_tournament_registrations(modeladmin, request, queryset):
+    """Export tournament registrations to Excel file"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tournament Registrations"
+
+    # Header styling
+    header_fill = PatternFill(start_color="1F2937", end_color="1F2937", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True, size=12)
+
+    # Headers
+    headers = ['Reg ID', 'Full Name', 'Gamer Tag', 'Gender', 'Email', 'Payment Reference', 'Payment Status', 'Date']
+    ws.append(headers)
+
+    # Style header row
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Data rows
+    for reg in queryset:
+        ws.append([
+            reg.id,
+            reg.full_name,
+            reg.gamer_tag,
+            reg.get_gender_display(),
+            reg.email,
+            reg.payment_reference,
+            reg.get_payment_status_display(),
+            reg.created_at.strftime('%Y-%m-%d %H:%M')
+        ])
+
+    # Adjust column widths
+    column_widths = [10, 25, 20, 18, 30, 25, 15, 20]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[chr(64 + i)].width = width
+
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=eyt_tournament_registrations.xlsx'
+    wb.save(response)
+    return response
+
 
 @admin.action(description='Export selected orders to Excel')
 def export_to_excel(modeladmin, request, queryset):
@@ -116,3 +172,39 @@ class OrderAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(TournamentConfig)
+class TournamentConfigAdmin(admin.ModelAdmin):
+    list_display = [
+        'tournament_name', 'fee_amount', 'currency', 'account_number',
+        'bank_name', 'spots', 'is_registration_open'
+    ]
+    ordering = ['tournament_name']
+
+    def has_add_permission(self, request):
+        # A single config row is pre-seeded; prevent accidental duplicates.
+        return False
+
+    def spots(self, obj):
+        if obj.spots_remaining is None:
+            return f"{obj.registered_count} / Unlimited"
+        return f"{obj.registered_count} / {obj.max_participants}"
+    spots.short_description = 'Spots'
+
+
+@admin.register(TournamentRegistration)
+class TournamentRegistrationAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'gamer_tag', 'full_name', 'gender', 'email',
+        'get_payment_status_display', 'created_at'
+    ]
+    list_filter = ['gender', 'payment_status', 'created_at']
+    search_fields = ['full_name', 'gamer_tag', 'email', 'payment_reference']
+    readonly_fields = ['created_at']
+    actions = [confirm_payment, export_tournament_registrations]
+
+    def get_payment_status_display(self, obj):
+        return obj.get_payment_status_display()
+    get_payment_status_display.short_description = 'Payment Status'
+    get_payment_status_display.admin_order_field = 'payment_status'

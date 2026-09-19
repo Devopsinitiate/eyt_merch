@@ -4,9 +4,12 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.urls import reverse
+from django.utils.html import mark_safe
 import json
-from .models import Size, Order, CustomUser
-from .forms import UserSignupForm, UserLoginForm, UserProfileForm
+import segno
+from .models import Size, Order, CustomUser, TournamentConfig
+from .forms import UserSignupForm, UserLoginForm, UserProfileForm, TournamentRegistrationForm
 
 
 def signup_view(request):
@@ -134,3 +137,61 @@ def create_order(request):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def tournament_view(request):
+    """Tournament landing page showing the QR code that opens the registration portal"""
+    config = TournamentConfig.get_config()
+    register_url = request.build_absolute_uri(reverse('merch:tournament_register'))
+
+    qr_svg = None
+    if register_url:
+        qr = segno.make(register_url, error='m')
+        qr_svg = mark_safe(qr.svg_inline(scale=8, border=2, dark='#0a0a0a', light='#ffffff'))
+
+    return render(request, 'merch/tournament.html', {
+        'config': config,
+        'qr_svg': qr_svg,
+        'register_url': register_url,
+    })
+
+
+def tournament_register(request):
+    """Registration portal reached by scanning the tournament QR code"""
+    config = TournamentConfig.get_config()
+
+    if config and not config.is_registration_open:
+        return render(request, 'merch/tournament_register.html', {
+            'config': config,
+            'form': None,
+            'closed': True,
+        })
+
+    if config and config.is_full:
+        return render(request, 'merch/tournament_register.html', {
+            'config': config,
+            'form': None,
+            'full': True,
+        })
+
+    if request.method == 'POST':
+        form = TournamentRegistrationForm(request.POST)
+        if form.is_valid():
+            registration = form.save(commit=False)
+            registration.payment_status = 'PENDING'
+            registration.save()
+            messages.success(
+                request,
+                f'Registration confirmed! Welcome, #{registration.gamer_tag}. '
+                'Complete your payment using the details below to secure your spot.'
+            )
+            return redirect('merch:tournament_register')
+    else:
+        form = TournamentRegistrationForm()
+
+    return render(request, 'merch/tournament_register.html', {
+        'config': config,
+        'form': form,
+        'closed': False,
+        'full': False,
+    })
